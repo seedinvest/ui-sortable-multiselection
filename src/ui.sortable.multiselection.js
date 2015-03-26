@@ -1,8 +1,8 @@
 angular.module('ui.sortable.multiselection', [])
   .constant('uiSortableMultiSelectionClass', 'ui-sortable-selected')
   .directive('uiSortableSelectable', [
-    'uiSortableMultiSelectionClass',
-    function(selectedItemClass) {
+    '$parse', 'uiSortableMultiSelectionClass',
+    function($parse, selectedItemClass) {
       return {
         link: function(scope, element/*, attrs*/) {
           element.on('click', function (e) {
@@ -17,15 +17,43 @@ angular.module('ui.sortable.multiselection', [])
 
             if (e.ctrlKey || e.metaKey) {
               $this.toggleClass(selectedItemClass);
+              if ($this.attr('ui-sortable-selectable')) {
+                if ($this.hasClass(selectedItemClass))
+                  $parse($this.attr('ui-sortable-selectable')).assign($this.scope(), true);
+                else
+                  $parse($this.attr('ui-sortable-selectable')).assign($this.scope(), false);
+              }
             } else if (e.shiftKey && lastIndex !== undefined && lastIndex >= 0) {
               if (index > lastIndex) {
-                $parent.children().slice(lastIndex, index + 1).addClass(selectedItemClass);
+                var elements = $parent.children().slice(lastIndex, index + 1);
+                elements.addClass(selectedItemClass);
+
+                for (var i=0; i<elements.length; i++) {
+                  if ($(elements[i]).attr('ui-sortable-selectable'))
+                    $parse($(elements[i]).attr('ui-sortable-selectable')).assign($(elements[i]).scope(), true);
+                }
               } else if(index < lastIndex) {
-                $parent.children().slice(index, lastIndex).addClass(selectedItemClass);
+                var elements = $parent.children().slice(index, lastIndex);
+                elements.addClass(selectedItemClass);
+                for (var i=0; i<elements.length; i++) {
+                  if ($(elements[i]).attr('ui-sortable-selectable'))
+                    $parse($(elements[i]).attr('ui-sortable-selectable')).assign($(elements[i]).scope(), true);
+                }
               }
             } else {
-              $parent.children('.'+selectedItemClass).not($this).removeClass(selectedItemClass);
+              var elements = $parent.children('.'+selectedItemClass).not($this);
+              elements.removeClass(selectedItemClass);
+              for (var i=0; i<elements.length; i++) {
+                if ($(elements[i]).attr('ui-sortable-selectable'))
+                  $parse($(elements[i]).attr('ui-sortable-selectable')).assign($(elements[i]).scope(), false);
+              }
               $this.toggleClass(selectedItemClass);
+              if ($this.attr('ui-sortable-selectable')) {
+                if ($this.hasClass(selectedItemClass))
+                  $parse($this.attr('ui-sortable-selectable')).assign($this.scope(), true);
+                else
+                  $parse($this.attr('ui-sortable-selectable')).assign($this.scope(), false);
+              }
             }
             parentScope.sortableMultiSelect.lastIndex = index;
           });
@@ -34,8 +62,8 @@ angular.module('ui.sortable.multiselection', [])
     }
   ])
   .factory('uiSortableMultiSelectionMethods', [
-    'uiSortableMultiSelectionClass',
-    function (selectedItemClass) {
+    '$parse', 'uiSortableMultiSelectionClass',
+    function ($parse, selectedItemClass) {
       function fixIndex (oldPosition, newPosition, x) {
         if (oldPosition < x && (newPosition === undefined || (oldPosition < newPosition && x <= newPosition))) {
           return x - 1;
@@ -117,6 +145,13 @@ angular.module('ui.sortable.multiselection', [])
               item.addClass(selectedItemClass)
                 .siblings()
                 .removeClass(selectedItemClass);
+              if (item.attr('ui-sortable-selectable'))
+                $parse(item.attr('ui-sortable-selectable')).assign(item.scope(), true);
+              var elements = item.siblings();
+              for (var i=0; i<elements.length; i++) {
+                if ($(elements[i]).attr('ui-sortable-selectable'))
+                  $parse($(elements[i]).attr('ui-sortable-selectable')).assign($(elements[i]).scope(), false);
+              }
           }
 
           var selectedElements = item.parent().children('.' + selectedItemClass);
@@ -214,12 +249,12 @@ angular.module('ui.sortable.multiselection', [])
             // so that we can locate its position
             // after we remove the co-dragged elements
             var draggedModel = ngModel[newPosition];
-            
+
             // get the models and remove them from the list
             // the code should run in reverse order,
             // so that the indexes will not break
             var models = extractGroupedModelsFromIndexes(ngModel, indexes.above, indexes.below);
-          
+
             // add the models to the list
             Array.prototype.splice.apply(
               ngModel,
@@ -231,7 +266,14 @@ angular.module('ui.sortable.multiselection', [])
               [ngModel.indexOf(draggedModel), 0]
               .concat(models.above));
 
+            var elements = ui.item.parent().find('> .' + selectedItemClass)
+            console.log(elements);
+            for (var i=0; i<elements.length; i++) {
+              if ($(elements[i]).attr('ui-sortable-selectable'))
+                $parse($(elements[i]).attr('ui-sortable-selectable')).assign($(elements[i]).scope(), false);
+            }
             ui.item.parent().find('> .' + selectedItemClass).removeClass('' + selectedItemClass).show();
+
           } else if (ui.item.sortable.isCanceled()) {
             sourceElement.find('> .' + selectedItemClass).show();
           }
