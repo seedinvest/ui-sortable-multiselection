@@ -47,13 +47,13 @@ angular.module('ui.sortable.multiselection', [])
                 if ($(elements[i]).attr('ui-sortable-selectable'))
                   $parse($(elements[i]).attr('ui-sortable-selectable')).assign($(elements[i]).scope(), false);
               }
-              $this.toggleClass(selectedItemClass);
+              /*$this.toggleClass(selectedItemClass);
               if ($this.attr('ui-sortable-selectable')) {
                 if ($this.hasClass(selectedItemClass))
                   $parse($this.attr('ui-sortable-selectable')).assign($this.scope(), true);
                 else
                   $parse($this.attr('ui-sortable-selectable')).assign($this.scope(), false);
-              }
+              }*/
             }
             parentScope.sortableMultiSelect.lastIndex = index;
           });
